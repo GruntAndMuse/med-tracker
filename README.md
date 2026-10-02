@@ -27,6 +27,16 @@ This is a reminder helper only — not medical advice. Always follow your doctor
 
 Open `index.html` on any phone browser (iPhone or Android). Add to home screen for an app-like experience. Works offline after first load.
 
+## Docs
+
+- [QUICKSTART.md](QUICKSTART.md) — up and running in 2 minutes
+- [ABOUT.md](ABOUT.md) — what it is, who it's for, and why "private by design" beats "HIPAA compliant"
+- [ROADMAP.md](ROADMAP.md) — where it's going and what we're deliberately not doing
+- [CONTRIBUTING.md](CONTRIBUTING.md) — how to help (the app is one HTML file — keep it that way)
+- [CHANGELOG.md](CHANGELOG.md) — what changed
+- [SECURITY.md](SECURITY.md) — security architecture and how to verify it yourself
+- [PRIVACY.md](PRIVACY.md) — plain-English privacy policy (also used for app store submission)
+
 ## Open source
 
 MIT licensed. The entire app is one HTML file — review it yourself.
