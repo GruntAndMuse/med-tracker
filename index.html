@@ -422,7 +422,8 @@ function doseRow(d) {
     countHtml = '<div class="count-badge' + (low ? ' low' : '') + '">' +
       (low ? '⚠️ ' : '') + d.med.count + ' left' +
       (days != null ? ' (~' + days + ' day' + (days === 1 ? '' : 's') + ')' : '') +
-      (low ? ' — refill soon!' : '') + '</div>';
+      (low ? ' — refill soon!' : '') + '</div>' +
+      (low ? '<button onclick="event.stopPropagation();refillMed(\'' + d.med.id + '\')" style="margin-top:6px;padding:10px 18px;font-size:17px;font-weight:700;border:2px solid #057a2e;background:#e6f4ea;color:#057a2e;border-radius:12px;cursor:pointer">💊 I refilled — reset count</button>' : '');
   }
   const snoozed = isSnoozed(d.key);
   const snoozeHtml = snoozed
@@ -758,22 +759,65 @@ function renderDoctor() {
   el.innerHTML = html;
 }
 
-// ---------- History ----------
+function refillMed(medId) {
+  const med = DB.meds.find(m => m.id === medId);
+  if (!med) return;
+  const val = prompt('How many pills in the new bottle?', '30');
+  if (val === null) return;
+  const n = parseInt(val, 10);
+  if (isNaN(n) || n < 0) { alert('Please enter a number.'); return; }
+  med.count = n;
+  save(DB); renderToday();
+}
+// Retroactive logging: mark a past dose as taken
 function renderHistory() {
   const el = document.getElementById('historyList');
-  if (!DB.log.length) { el.innerHTML = '<div class="empty">Nothing checked off yet.</div>'; return; }
+  // Yesterday's scheduled doses not yet logged
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const yStr = todayStr(y);
+  const missed = [];
+  DB.meds.forEach(m => {
+    if (m.prn || !m.times) return;
+    m.times.forEach(t => {
+      const key = yStr + '|' + m.id + '|' + t;
+      if (!DB.log.some(l => l.key === key)) missed.push({ med: m, time: t, key, date: yStr });
+    });
+  });
+  let html = '';
+  if (missed.length) {
+    html += '<div class="card" style="border:2px solid #f0b429"><h3 style="margin-top:0">🤔 Yesterday — did you take these?</h3>' +
+      '<p style="font-size:18px;color:#666">No judgment — just tap if you took it and forgot to check it off.</p>';
+    missed.forEach(x => {
+      html += '<div class="dose-row"><button class="check" onclick="logPastDose(\'' + x.key + '\')"></button>' +
+        '<div class="dose-info"><div class="name">' + esc(x.med.name) + '</div>' +
+        '<div class="detail">' + fmtTime(x.time) + ' yesterday — ' + esc(x.med.dose) + '</div></div></div>';
+    });
+    html += '</div>';
+  }
+  if (!DB.log.length) {
+    html += '<div class="empty">Nothing checked off yet.</div>';
+    el.innerHTML = html;
+    return;
+  }
   const byDay = {};
   DB.log.slice().sort((a,b) => b.at.localeCompare(a.at)).forEach(l => { (byDay[l.date] = byDay[l.date] || []).push(l); });
-  let html = '';
   Object.keys(byDay).sort().reverse().forEach(day => {
     html += '<div class="history-day">' + niceDate(day) + '</div>';
     byDay[day].forEach(l => {
       const at = new Date(l.at);
-      html += '<div class="history-item"><span>✓ ' + esc(l.medName) + ' <span style="color:#888">(' + esc(l.dose) + ')</span></span>' +
+      const late = l.late ? ' <span style="color:#b45309;font-size:16px">(logged late)</span>' : '';
+      html += '<div class="history-item"><span>✓ ' + esc(l.medName) + ' <span style="color:#888">(' + esc(l.dose) + ')</span>' + late + '</span>' +
         '<span class="t">' + at.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'}) + '</span></div>';
     });
   });
   el.innerHTML = html;
+}
+function logPastDose(key) {
+  const [date, medId, time] = key.split('|');
+  const med = DB.meds.find(m => m.id === medId);
+  DB.log.push({ key, date, medId, time, medName: med ? med.name : '?', dose: med ? med.dose : '', food: med ? med.food : 'either', late: true, at: new Date().toISOString() });
+  if (med && med.count != null && med.count > 0) med.count--;
+  save(DB); renderHistory();
 }
 
 // ---------- Backup ----------
