@@ -182,6 +182,10 @@
   <div class="card">
     <h2 style="margin-top:0">Backup</h2>
     <p style="font-size:18px;color:#666">Save a copy of everything, or load a saved copy.</p>
+    <div style="background:#f8f9fa;border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:17px;color:#666">🛡️ Auto-backup is on — safety snapshots saved automatically.</div>
+      <div style="font-size:16px;color:#999;margin-top:4px" id="lastFileBackup">No file backup saved yet.</div>
+    </div>
     <button class="big-btn btn-blue" onclick="exportData()">📥 Save Backup</button>
     <button class="big-btn btn-blue" onclick="exportEncrypted()">🔐 Save Encrypted Backup</button>
     <button class="big-btn btn-gray" onclick="document.getElementById('importFile').click()">📤 Load Backup</button>
@@ -324,6 +328,7 @@ async function save(d) {
   } else {
     localStorage.setItem(KEY, JSON.stringify(d));
   }
+  autoSnapshot(); // safety snapshot on every save (best-effort)
 }
 let DB = load();
 let editingMedId = null;
@@ -909,6 +914,7 @@ async function exportEncrypted() {
     a.href = URL.createObjectURL(blob);
     a.download = 'my-medicines-backup-ENCRYPTED-' + todayStr() + '.json';
     a.click();
+    markFileBackup();
     setTimeout(() => alert('🔐 Encrypted backup saved!\n\nOnly your password can open it. Store it anywhere — email, cloud, USB.'), 300);
   } catch (e) { alert('Encryption failed: ' + e.message); }
 }
@@ -931,12 +937,55 @@ async function importEncrypted(bundle) {
 }
 
 // ---------- Backup ----------
+// ---------- Auto-backup ----------
+// Safety snapshots: rotating copies in a separate storage key.
+// Protects against data corruption. Does NOT survive browser data clear or uninstall —
+// that's what file backups are for.
+const SNAP_KEY = 'medTrackerSnapshots';
+const BACKUP_DATE_KEY = 'medTrackerLastFileBackup';
+function autoSnapshot() {
+  try {
+    let snaps = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]');
+    // Snapshot the CURRENT stored data (encrypted or plain, as-is)
+    const current = lockEnabled
+      ? localStorage.getItem(KEY + '_enc')
+      : localStorage.getItem(KEY);
+    if (!current) return;
+    snaps.push({ t: Date.now(), data: current, enc: lockEnabled });
+    if (snaps.length > 5) snaps = snaps.slice(-5); // keep last 5
+    localStorage.setItem(SNAP_KEY, JSON.stringify(snaps));
+  } catch(e) { /* snapshots are best-effort */ }
+}
+function markFileBackup() {
+  localStorage.setItem(BACKUP_DATE_KEY, Date.now().toString());
+  updateBackupUI();
+}
+function updateBackupUI() {
+  const el = document.getElementById('lastFileBackup');
+  if (!el) return;
+  const last = parseInt(localStorage.getItem(BACKUP_DATE_KEY) || '0');
+  if (!last) {
+    el.textContent = 'No file backup saved yet.';
+    el.style.color = '#c0392b';
+    return;
+  }
+  const days = Math.floor((Date.now() - last) / 86400000);
+  const d = new Date(last);
+  if (days >= 7) {
+    el.textContent = '⚠️ Last file backup: ' + d.toLocaleDateString() + ' (' + days + ' days ago — time for a fresh one!)';
+    el.style.color = '#c0392b';
+  } else {
+    el.textContent = 'Last file backup: ' + d.toLocaleDateString() + ' (' + days + 'd ago)';
+    el.style.color = '#666';
+  }
+}
 function exportData() {
   const blob = new Blob([JSON.stringify(DB, null, 2)], {type: 'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'my-medicines-backup-' + todayStr() + '.json';
   a.click();
+  markFileBackup();
   setTimeout(() => alert('Backup saved! Keep it somewhere safe.'), 300);
 }
 function importData(e) {
@@ -1142,6 +1191,7 @@ function updateLockUI() {
   const locked = await checkLockOnStart();
   if (!locked) {
     renderToday(); renderMeds(); renderAppts();
+    updateBackupUI();
     // First-launch: strongly recommend app lock (default-on stance)
     const seen = localStorage.getItem('medTrackerLockPrompt');
     if (!seen && !lockEnabled) {
