@@ -84,9 +84,28 @@
   .privacy-list li { font-size: 19px; padding: 10px 0; border-bottom: 1px solid #eee; display: flex; gap: 12px; align-items: center; }
   .privacy-list li:last-child { border: none; }
   .privacy-list .icon { font-size: 28px; }
+  /* App lock screen */
+  #lockScreen { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #1a56db, #0d3fa3); z-index: 100; flex-direction: column; align-items: center; justify-content: center; padding: 32px; }
+  #lockScreen.open { display: flex; }
+  #lockScreen .lock-icon { font-size: 80px; margin-bottom: 16px; }
+  #lockScreen h2 { color: white; margin: 0 0 8px 0; font-size: 28px; text-align: center; }
+  #lockScreen p { color: rgba(255,255,255,0.85); text-align: center; font-size: 18px; margin: 0 0 24px 0; }
+  #lockScreen input { max-width: 340px; text-align: center; font-size: 24px; padding: 20px; border-radius: 16px; border: none; }
+  #lockScreen .big-btn { max-width: 340px; }
+  #lockScreen .skip-link { color: rgba(255,255,255,0.7); font-size: 17px; margin-top: 16px; text-decoration: underline; cursor: pointer; background: none; border: none; }
 </style>
 </head>
 <body>
+
+<!-- APP LOCK -->
+<div id="lockScreen">
+  <div class="lock-icon">🔐</div>
+  <h2 id="lockTitle">My Medicines</h2>
+  <p id="lockMsg">Enter your password to unlock.</p>
+  <input type="password" id="lockPassword" placeholder="Password" autocomplete="off" onkeydown="if(event.key==='Enter')unlockApp()">
+  <button class="big-btn btn-green" onclick="unlockApp()">🔓 Unlock</button>
+  <button class="skip-link" id="lockSkip" onclick="skipLock()" style="display:none">Skip for now</button>
+</div>
 
 <div class="top">
   <h1>💊 My Medicines</h1>
@@ -125,6 +144,13 @@
     <h2 style="margin-top:0">📋 For My Doctor</h2>
     <p style="font-size:18px;color:#666">A clean summary of your meds and how you've been doing. Show it on your phone or print it.</p>
     <button class="big-btn btn-blue" onclick="showPage('doctor')">📋 View Summary</button>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">🔐 App Lock</h2>
+    <p style="font-size:18px;color:#666" id="lockStatus">Protect all your data with a password.</p>
+    <button class="big-btn btn-blue" id="lockSetupBtn" onclick="setupLock()">🔐 Set Up App Lock</button>
+    <button class="big-btn btn-gray" id="lockChangeBtn" style="display:none" onclick="changeLockPw()">Change Password</button>
+    <button class="big-btn btn-red" id="lockRemoveBtn" style="display:none" onclick="removeLock()">Remove App Lock</button>
   </div>
   <div class="card">
     <h2 style="margin-top:0">📖 Open Source</h2>
@@ -269,7 +295,24 @@ function load() {
   try { return JSON.parse(localStorage.getItem(KEY)) || { meds: [], log: [], appts: [] }; }
   catch(e) { return { meds: [], log: [], appts: [] }; }
 }
-function save(d) { localStorage.setItem(KEY, JSON.stringify(d)); }
+// save() encrypts when app lock is on, plaintext otherwise.
+// Async due to WebCrypto — callers use in-memory DB for rendering, so no await needed.
+async function save(d) {
+  DB = d;
+  if (lockEnabled && appKey) {
+    try {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, appKey,
+        new TextEncoder().encode(JSON.stringify(d)));
+      localStorage.setItem(KEY + '_enc', JSON.stringify({
+        iv: btoa(String.fromCharCode(...iv)),
+        data: btoa(String.fromCharCode(...new Uint8Array(ct)))
+      }));
+    } catch(e) { console.error('Encrypt save failed:', e); }
+  } else {
+    localStorage.setItem(KEY, JSON.stringify(d));
+  }
+}
 let DB = load();
 let editingMedId = null;
 let tempPillPhoto = null, tempLabelPhoto = null;
@@ -910,8 +953,182 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+// ---------- App lock (full-data encryption) ----------
+const LOCK_KEY = 'medTrackerLock'; // stores {salt, iv, check} — NOT the password
+let appKey = null; // in-memory AES key, never persisted
+let lockEnabled = false;
+
+async function checkLockOnStart() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(LOCK_KEY) || 'null');
+    if (stored && stored.salt) {
+      lockEnabled = true;
+      showLock('unlock');
+      return true; // locked, wait for password
+    }
+  } catch(e) {}
+  // Also migrate: if v2 data exists unencrypted and no lock, just load normally
+  return false;
+}
+function showLock(mode) {
+  const ls = document.getElementById('lockScreen');
+  ls.classList.add('open');
+  document.getElementById('lockPassword').value = '';
+  if (mode === 'unlock') {
+    document.getElementById('lockTitle').textContent = '🔐 My Medicines';
+    document.getElementById('lockMsg').textContent = 'Enter your password to unlock.';
+    document.getElementById('lockSkip').style.display = 'none';
+  } else if (mode === 'setup') {
+    document.getElementById('lockTitle').textContent = 'Set Up App Lock';
+    document.getElementById('lockMsg').textContent = 'Choose a password. You will need it every time you open the app.';
+    document.getElementById('lockSkip').style.display = 'block';
+  }
+  setTimeout(() => document.getElementById('lockPassword').focus(), 300);
+}
+function hideLock() {
+  document.getElementById('lockScreen').classList.remove('open');
+}
+async function unlockApp() {
+  const pw = document.getElementById('lockPassword').value;
+  if (!pw) { alert('Please enter your password.'); return; }
+  try {
+    const stored = JSON.parse(localStorage.getItem(LOCK_KEY));
+    const salt = Uint8Array.from(atob(stored.salt), c => c.charCodeAt(0));
+    const key = await deriveKey(pw, salt);
+    // Verify by decrypting the check value
+    const iv = Uint8Array.from(atob(stored.checkIv), c => c.charCodeAt(0));
+    const ct = Uint8Array.from(atob(stored.check), c => c.charCodeAt(0));
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
+    if (new TextDecoder().decode(pt) !== 'medtracker-unlock-check') throw new Error('bad password');
+    appKey = key;
+    await loadEncryptedDB();
+    hideLock();
+    renderToday(); renderMeds(); renderAppts();
+    updateLockUI();
+  } catch(e) {
+    alert('Wrong password. Try again.');
+    document.getElementById('lockPassword').value = '';
+  }
+}
+function skipLock() {
+  hideLock();
+  renderToday(); renderMeds(); renderAppts();
+}
+async function setupLock() {
+  const pw = prompt('Choose a password for the app lock.\n\nYou will need it every time you open the app. Do not lose it.');
+  if (!pw) return;
+  const pw2 = prompt('Type it again to confirm:');
+  if (pw !== pw2) { alert('Passwords did not match.'); return; }
+  try {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const key = await deriveKey(pw, salt);
+    // Create verification check
+    const checkIv = crypto.getRandomValues(new Uint8Array(12));
+    const checkCt = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: checkIv }, key,
+      new TextEncoder().encode('medtracker-unlock-check'));
+    // Encrypt current DB
+    const dbIv = crypto.getRandomValues(new Uint8Array(12));
+    const dbCt = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: dbIv }, key,
+      new TextEncoder().encode(JSON.stringify(DB)));
+    localStorage.setItem(LOCK_KEY, JSON.stringify({
+      salt: btoa(String.fromCharCode(...salt)),
+      checkIv: btoa(String.fromCharCode(...checkIv)),
+      check: btoa(String.fromCharCode(...new Uint8Array(checkCt)))
+    }));
+    localStorage.setItem(KEY + '_enc', JSON.stringify({
+      iv: btoa(String.fromCharCode(...dbIv)),
+      data: btoa(String.fromCharCode(...new Uint8Array(dbCt)))
+    }));
+    localStorage.removeItem(KEY); // remove plaintext
+    appKey = key;
+    lockEnabled = true;
+    updateLockUI();
+    alert('🔐 App lock is on!\n\nYour data is now encrypted. You will need your password every time you open the app.');
+  } catch(e) { alert('Failed to set up lock: ' + e.message); }
+}
+async function changeLockPw() {
+  const pw = prompt('Enter your CURRENT password:');
+  if (!pw) return;
+  // Verify current
+  try {
+    const stored = JSON.parse(localStorage.getItem(LOCK_KEY));
+    const salt = Uint8Array.from(atob(stored.salt), c => c.charCodeAt(0));
+    const key = await deriveKey(pw, salt);
+    const iv = Uint8Array.from(atob(stored.checkIv), c => c.charCodeAt(0));
+    const ct = Uint8Array.from(atob(stored.check), c => c.charCodeAt(0));
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
+    if (new TextDecoder().decode(pt) !== 'medtracker-unlock-check') throw new Error('bad');
+  } catch(e) { alert('Wrong password.'); return; }
+  const npw = prompt('Enter your NEW password:');
+  if (!npw) return;
+  const npw2 = prompt('Type it again:');
+  if (npw !== npw2) { alert('Did not match.'); return; }
+  // Re-encrypt with new password (DB already in memory decrypted)
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await deriveKey(npw, salt);
+  const checkIv = crypto.getRandomValues(new Uint8Array(12));
+  const checkCt = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: checkIv }, key,
+    new TextEncoder().encode('medtracker-unlock-check'));
+  const dbIv = crypto.getRandomValues(new Uint8Array(12));
+  const dbCt = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: dbIv }, key,
+    new TextEncoder().encode(JSON.stringify(DB)));
+  localStorage.setItem(LOCK_KEY, JSON.stringify({
+    salt: btoa(String.fromCharCode(...salt)),
+    checkIv: btoa(String.fromCharCode(...checkIv)),
+    check: btoa(String.fromCharCode(...new Uint8Array(checkCt)))
+  }));
+  localStorage.setItem(KEY + '_enc', JSON.stringify({
+    iv: btoa(String.fromCharCode(...dbIv)),
+    data: btoa(String.fromCharCode(...new Uint8Array(dbCt)))
+  }));
+  appKey = key;
+  alert('Password changed!');
+}
+async function removeLock() {
+  const pw = prompt('Enter your password to remove the app lock:');
+  if (!pw) return;
+  try {
+    const stored = JSON.parse(localStorage.getItem(LOCK_KEY));
+    const salt = Uint8Array.from(atob(stored.salt), c => c.charCodeAt(0));
+    const key = await deriveKey(pw, salt);
+    const iv = Uint8Array.from(atob(stored.checkIv), c => c.charCodeAt(0));
+    const ct = Uint8Array.from(atob(stored.check), c => c.charCodeAt(0));
+    await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
+    // Write back plaintext
+    localStorage.setItem(KEY, JSON.stringify(DB));
+    localStorage.removeItem(KEY + '_enc');
+    localStorage.removeItem(LOCK_KEY);
+    appKey = null;
+    lockEnabled = false;
+    updateLockUI();
+    alert('App lock removed. Your data is no longer encrypted.');
+  } catch(e) { alert('Wrong password.'); }
+}
+async function loadEncryptedDB() {
+  const enc = JSON.parse(localStorage.getItem(KEY + '_enc'));
+  const iv = Uint8Array.from(atob(enc.iv), c => c.charCodeAt(0));
+  const ct = Uint8Array.from(atob(enc.data), c => c.charCodeAt(0));
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, appKey, ct);
+  DB = JSON.parse(new TextDecoder().decode(pt));
+}
+function updateLockUI() {
+  const on = lockEnabled;
+  document.getElementById('lockStatus').textContent = on
+    ? '🔐 App lock is ON — your data is encrypted.'
+    : 'Protect all your data with a password.';
+  document.getElementById('lockSetupBtn').style.display = on ? 'none' : 'block';
+  document.getElementById('lockChangeBtn').style.display = on ? 'block' : 'none';
+  document.getElementById('lockRemoveBtn').style.display = on ? 'block' : 'none';
+}
+
 // ---------- Init ----------
-renderToday();
+(async function init() {
+  const locked = await checkLockOnStart();
+  if (!locked) {
+    renderToday(); renderMeds(); renderAppts();
+  }
+  updateLockUI();
+})();
 </script>
 </body>
 </html>
