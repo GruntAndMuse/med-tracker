@@ -145,8 +145,9 @@
     <h2 style="margin-top:0">Backup</h2>
     <p style="font-size:18px;color:#666">Save a copy of everything, or load a saved copy.</p>
     <button class="big-btn btn-blue" onclick="exportData()">📥 Save Backup</button>
+    <button class="big-btn btn-blue" onclick="exportEncrypted()">🔐 Save Encrypted Backup</button>
     <button class="big-btn btn-gray" onclick="document.getElementById('importFile').click()">📤 Load Backup</button>
-    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    <input type="file" id="importFile" accept=".json,.enc" style="display:none" onchange="importData(event)">
   </div>
   <div class="card">
     <h2 style="margin-top:0">History</h2>
@@ -820,6 +821,58 @@ function logPastDose(key) {
   save(DB); renderHistory();
 }
 
+// ---------- Encrypted backup (AES-GCM + PBKDF2, all on-device) ----------
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+    baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+  );
+}
+async function exportEncrypted() {
+  const pw = prompt('Choose a password for this backup.\n\nYou will need it to restore. Do not lose it.');
+  if (!pw) return;
+  const pw2 = prompt('Type it again to confirm:');
+  if (pw !== pw2) { alert('Passwords did not match.'); return; }
+  try {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveKey(pw, salt);
+    const data = new TextEncoder().encode(JSON.stringify(DB));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, data);
+    const bundle = {
+      v: 1, alg: 'AES-GCM-256/PBKDF2-SHA256-100k',
+      salt: btoa(String.fromCharCode(...salt)),
+      iv: btoa(String.fromCharCode(...iv)),
+      data: btoa(String.fromCharCode(...new Uint8Array(ct)))
+    };
+    const blob = new Blob([JSON.stringify(bundle)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'my-medicines-backup-ENCRYPTED-' + todayStr() + '.json';
+    a.click();
+    setTimeout(() => alert('🔐 Encrypted backup saved!\n\nOnly your password can open it. Store it anywhere — email, cloud, USB.'), 300);
+  } catch (e) { alert('Encryption failed: ' + e.message); }
+}
+async function importEncrypted(bundle) {
+  const pw = prompt('Enter the backup password:');
+  if (!pw) return;
+  try {
+    const salt = Uint8Array.from(atob(bundle.salt), c => c.charCodeAt(0));
+    const iv = Uint8Array.from(atob(bundle.iv), c => c.charCodeAt(0));
+    const ct = Uint8Array.from(atob(bundle.data), c => c.charCodeAt(0));
+    const key = await deriveKey(pw, salt);
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
+    const d = JSON.parse(new TextDecoder().decode(pt));
+    if (!d.meds || !d.log || !d.appts) throw new Error('bad data');
+    if (!confirm('This will replace everything currently in the app. Continue?')) return;
+    DB = d; save(DB);
+    renderToday(); renderMeds(); renderAppts();
+    alert('🔓 Encrypted backup loaded!');
+  } catch (e) { alert('Could not open backup. Wrong password?'); }
+}
+
 // ---------- Backup ----------
 function exportData() {
   const blob = new Blob([JSON.stringify(DB, null, 2)], {type: 'application/json'});
@@ -836,6 +889,11 @@ function importData(e) {
   r.onload = function(ev) {
     try {
       const d = JSON.parse(ev.target.result);
+      // Encrypted backup?
+      if (d.v === 1 && d.alg && d.salt && d.iv && d.data) {
+        importEncrypted(d);
+        return;
+      }
       if (!d.meds || !d.log || !d.appts) throw new Error('bad file');
       if (!confirm('This will replace everything currently in the app. Continue?')) return;
       DB = d; save(DB);
