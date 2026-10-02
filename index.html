@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>My Medicines</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 0; background: #f0f2f5; font-size: 20px; color: #222; }
+  .top { background: linear-gradient(135deg, #1a56db, #0d3fa3); color: white; padding: 20px 18px 16px; text-align: center; position: sticky; top: 0; z-index: 10; }
+  .top h1 { margin: 0; font-size: 28px; }
+  .top .date { font-size: 18px; opacity: 0.92; margin-top: 4px; }
+  .top .privacy-badge { display: inline-block; margin-top: 8px; font-size: 14px; background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-weight: 600; }
+  .nav { display: flex; background: white; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 9; }
+  .nav button { flex: 1; padding: 18px 4px; font-size: 18px; border: none; background: white; color: #555; font-weight: 600; }
+  .nav button.active { color: #1a56db; border-bottom: 4px solid #1a56db; }
+  .page { display: none; padding: 16px; padding-bottom: 110px; }
+  .page.active { display: block; }
+  .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .big-btn { display: block; width: 100%; padding: 22px; font-size: 24px; font-weight: 700; border: none; border-radius: 16px; margin: 12px 0; cursor: pointer; }
+  .btn-blue { background: #1a56db; color: white; }
+  .btn-green { background: #057a2e; color: white; }
+  .btn-red { background: #c81e1e; color: white; }
+  .btn-gray { background: #e5e5e5; color: #333; }
+  /* Dose rows with AM/PM color coding */
+  .dose-row { display: flex; align-items: center; gap: 12px; background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 8px solid #ccc; }
+  .dose-row.am { border-left-color: #f0b429; background: #fffdf5; }
+  .dose-row.pm { border-left-color: #4a6cf7; background: #f7f9ff; }
+  .dose-row.taken { opacity: 0.5; }
+  .dose-row.taken .check { background: #057a2e; color: white; border-color: #057a2e; }
+  .dose-row .check { width: 72px; height: 72px; min-width: 72px; border-radius: 50%; border: 4px solid #1a56db; background: white; font-size: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .dose-info { flex: 1; min-width: 0; }
+  .dose-info .name { font-size: 24px; font-weight: 700; }
+  .dose-info .detail { font-size: 18px; color: #555; margin-top: 4px; line-height: 1.4; }
+  .dose-info .food-tag { display: inline-block; font-size: 16px; font-weight: 700; padding: 4px 12px; border-radius: 12px; margin-top: 6px; }
+  .food-with { background: #e6f4ea; color: #057a2e; }
+  .food-empty { background: #fef3e2; color: #b45309; }
+  .time-badge { font-size: 15px; font-weight: 700; padding: 4px 10px; border-radius: 10px; margin-right: 6px; }
+  .time-badge.am { background: #fef3c7; color: #92400e; }
+  .time-badge.pm { background: #dbeafe; color: #1e40af; }
+  .pill-photo { width: 72px; height: 72px; min-width: 72px; border-radius: 12px; object-fit: cover; background: #eee; cursor: pointer; }
+  .pill-photo.placeholder { display: flex; align-items: center; justify-content: center; font-size: 36px; }
+  /* Count badge */
+  .count-badge { font-size: 16px; font-weight: 700; color: #666; margin-top: 6px; }
+  .count-badge.low { color: #c81e1e; }
+  input, select, textarea { width: 100%; padding: 18px; font-size: 22px; border: 2px solid #ccc; border-radius: 12px; margin: 8px 0 16px 0; }
+  label { font-weight: 700; font-size: 20px; display: block; margin-top: 10px; }
+  .hint { font-weight: 400; color: #888; font-size: 17px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 16px 0; }
+  .chip { padding: 14px 20px; font-size: 20px; border: 2px solid #1a56db; border-radius: 30px; background: white; color: #1a56db; cursor: pointer; font-weight: 600; }
+  .chip.on { background: #1a56db; color: white; }
+  .chip.food-on { background: #057a2e; border-color: #057a2e; color: white; }
+  .appt { border-left: 6px solid #1a56db; }
+  .appt .when { font-size: 22px; font-weight: 700; color: #1a56db; }
+  .disclaimer { background: #fff8e1; border: 2px solid #f0c420; border-radius: 12px; padding: 16px; font-size: 17px; margin: 16px; color: #5c4b00; line-height: 1.5; }
+  .empty { text-align: center; color: #888; padding: 40px 20px; font-size: 20px; line-height: 1.6; }
+  .fab { position: fixed; bottom: 24px; right: 24px; width: 76px; height: 76px; border-radius: 50%; background: #1a56db; color: white; font-size: 44px; border: none; box-shadow: 0 4px 16px rgba(0,0,0,0.3); cursor: pointer; z-index: 20; line-height: 1; }
+  .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 30; overflow-y: auto; }
+  .modal.open { display: block; }
+  .modal-body { background: white; margin: 16px; border-radius: 20px; padding: 24px; }
+  .photo-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; margin: 8px 0; display: none; }
+  .photo-row { display: flex; gap: 12px; }
+  .photo-row > div { flex: 1; }
+  .photo-row .photo-preview { max-height: 160px; }
+  .history-day { font-weight: 700; font-size: 22px; margin: 20px 0 10px 0; color: #1a56db; }
+  .history-item { background: white; border-radius: 12px; padding: 14px 18px; margin-bottom: 8px; font-size: 19px; display: flex; justify-content: space-between; align-items: center; }
+  .history-item .t { color: #666; font-size: 17px; }
+  /* Photo viewer */
+  #photoViewer .modal-body { text-align: center; padding: 16px; }
+  #photoViewer img { width: 100%; border-radius: 12px; }
+  #photoViewer .cap { font-size: 20px; font-weight: 700; margin: 12px 0; }
+  /* Count stepper */
+  .stepper { display: flex; align-items: center; gap: 16px; margin: 8px 0 16px 0; }
+  .stepper button { width: 64px; height: 64px; font-size: 32px; border-radius: 50%; border: 3px solid #1a56db; background: white; color: #1a56db; font-weight: 700; cursor: pointer; }
+  .stepper .val { font-size: 32px; font-weight: 700; min-width: 80px; text-align: center; }
+  /* Section headers in Today */
+  .section-head { font-size: 22px; font-weight: 800; margin: 20px 4px 12px 4px; display: flex; align-items: center; gap: 8px; }
+  .section-head.am { color: #92400e; }
+  .section-head.pm { color: #1e40af; }
+  /* Privacy panel */
+  .privacy-list { list-style: none; padding: 0; margin: 12px 0; }
+  .privacy-list li { font-size: 19px; padding: 10px 0; border-bottom: 1px solid #eee; display: flex; gap: 12px; align-items: center; }
+  .privacy-list li:last-child { border: none; }
+  .privacy-list .icon { font-size: 28px; }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>💊 My Medicines</h1>
+  <div class="date" id="todayDate"></div>
+  <div><span class="privacy-badge">🔒 Private — nothing leaves your phone</span></div>
+</div>
+
+<div class="nav">
+  <button id="navToday" class="active" onclick="showPage('today')">Today</button>
+  <button id="navMeds" onclick="showPage('meds')">My Pills</button>
+  <button id="navAppts" onclick="showPage('appts')">Doctors</button>
+  <button id="navMore" onclick="showPage('more')">More</button>
+</div>
+
+<!-- TODAY -->
+<div id="page-today" class="page active">
+  <div id="todayList"></div>
+</div>
+
+<!-- MEDS -->
+<div id="page-meds" class="page">
+  <div id="medList"></div>
+  <button class="fab" onclick="openMedModal()">+</button>
+</div>
+
+<!-- APPOINTMENTS -->
+<div id="page-appts" class="page">
+  <div id="apptList"></div>
+  <button class="fab" onclick="openApptModal()">+</button>
+</div>
+
+<!-- MORE -->
+<div id="page-more" class="page">
+  <div class="card">
+    <h2 style="margin-top:0">🔒 Your Privacy</h2>
+    <ul class="privacy-list">
+      <li><span class="icon">📵</span> No login, no account, no password</li>
+      <li><span class="icon">🚫</span> No ads, no tracking, no analytics</li>
+      <li><span class="icon">💰</span> Free forever, no payments</li>
+      <li><span class="icon">📱</span> Everything stays on this phone</li>
+      <li><span class="icon">☁️</span> Nothing sent to the cloud or internet</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">Backup</h2>
+    <p style="font-size:18px;color:#666">Save a copy of everything, or load a saved copy.</p>
+    <button class="big-btn btn-blue" onclick="exportData()">📥 Save Backup</button>
+    <button class="big-btn btn-gray" onclick="document.getElementById('importFile').click()">📤 Load Backup</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">History</h2>
+    <p style="font-size:18px;color:#666">Everything you've checked off.</p>
+    <button class="big-btn btn-blue" onclick="showPage('history');renderHistory()">📋 View History</button>
+  </div>
+  <div class="disclaimer">
+    ⚠️ This app is a reminder helper only. It does not give medical advice, diagnose, treat, or recommend any medication. Always follow your doctor's instructions. If you feel unwell, call your doctor right away.
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div id="page-history" class="page">
+  <button class="big-btn btn-gray" onclick="showPage('more')">← Back</button>
+  <div id="historyList"></div>
+</div>
+
+<!-- ADD/EDIT MED MODAL -->
+<div id="medModal" class="modal">
+  <div class="modal-body">
+    <h2 style="margin-top:0" id="medModalTitle">Add a Pill</h2>
+
+    <label>Photo of the pill <span class="hint">(so you can match it visually)</span></label>
+    <img id="pillPhotoPreview" class="photo-preview">
+    <button class="big-btn btn-gray" style="font-size:20px;padding:16px" onclick="document.getElementById('pillPhotoInput').click()">📷 Photo of Pill</button>
+    <input type="file" id="pillPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event,'pill')">
+
+    <label>Photo of the bottle label <span class="hint">(pills can look alike — the label tells them apart)</span></label>
+    <img id="labelPhotoPreview" class="photo-preview">
+    <button class="big-btn btn-gray" style="font-size:20px;padding:16px" onclick="document.getElementById('labelPhotoInput').click()">🏷️ Photo of Label</button>
+    <input type="file" id="labelPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event,'label')">
+
+    <label>Pill name</label>
+    <input id="medName" placeholder="e.g. Zofran" autocomplete="off">
+
+    <label>Dose <span class="hint">(e.g. 8mg, 1 tablet)</span></label>
+    <input id="medDose" placeholder="e.g. 8mg" autocomplete="off">
+
+    <label>What times? <span class="hint">(tap all that apply)</span></label>
+    <div class="chip-row" id="timeChips"></div>
+
+    <label>With food or empty stomach?</label>
+    <div class="chip-row" id="foodChips">
+      <button class="chip" data-food="with" onclick="setFood('with')">🍽️ With food</button>
+      <button class="chip" data-food="empty" onclick="setFood('empty')">🚫 Empty stomach</button>
+      <button class="chip" data-food="either" onclick="setFood('either')">🤷 Either</button>
+    </div>
+
+    <label>How many pills do you have? <span class="hint">(we'll count down as you check them off)</span></label>
+    <div class="stepper">
+      <button onclick="stepCount(-1)">−</button>
+      <div class="val" id="countVal">30</div>
+      <button onclick="stepCount(1)">+</button>
+    </div>
+    <div class="chip-row">
+      <button class="chip" onclick="setCount(0)">Don't track</button>
+    </div>
+
+    <label>Notes <span class="hint">(optional)</span></label>
+    <input id="medNotes" placeholder="e.g. take with a full glass of water" autocomplete="off">
+
+    <button class="big-btn btn-green" onclick="saveMed()">✅ Save Pill</button>
+    <button class="big-btn btn-gray" onclick="closeModal('medModal')">Cancel</button>
+    <button class="big-btn btn-red" id="deleteMedBtn" style="display:none" onclick="deleteMed()">🗑 Delete This Pill</button>
+  </div>
+</div>
+
+<!-- ADD APPT MODAL -->
+<div id="apptModal" class="modal">
+  <div class="modal-body">
+    <h2 style="margin-top:0">Add Doctor Visit</h2>
+    <label>Date</label>
+    <input type="date" id="apptDate">
+    <label>Time</label>
+    <input type="time" id="apptTime">
+    <label>Doctor / place</label>
+    <input id="apptWho" placeholder="e.g. Dr. Smith — Oncology" autocomplete="off">
+    <label>Notes <span class="hint">(optional)</span></label>
+    <input id="apptNotes" placeholder="e.g. bring lab results" autocomplete="off">
+    <button class="big-btn btn-green" onclick="saveAppt()">✅ Save Visit</button>
+    <button class="big-btn btn-gray" onclick="closeModal('apptModal')">Cancel</button>
+  </div>
+</div>
+
+<!-- PHOTO VIEWER -->
+<div id="photoViewer" class="modal">
+  <div class="modal-body">
+    <div class="cap" id="viewerCap"></div>
+    <img id="viewerImg">
+    <button class="big-btn btn-blue" onclick="closeModal('photoViewer')">Close</button>
+  </div>
+</div>
+
+<script>
+// ---------- Storage ----------
+const KEY = 'medTrackerV2';
+// Migrate v1 -> v2
+(function migrate() {
+  try {
+    const v1 = localStorage.getItem('medTrackerV1');
+    if (v1 && !localStorage.getItem(KEY)) {
+      const d = JSON.parse(v1);
+      d.meds.forEach(m => { m.labelPhoto = null; m.food = 'either'; m.count = null; });
+      localStorage.setItem(KEY, JSON.stringify(d));
+    }
+  } catch(e) {}
+})();
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || { meds: [], log: [], appts: [] }; }
+  catch(e) { return { meds: [], log: [], appts: [] }; }
+}
+function save(d) { localStorage.setItem(KEY, JSON.stringify(d)); }
+let DB = load();
+let editingMedId = null;
+let tempPillPhoto = null, tempLabelPhoto = null;
+let selectedTimes = [];
+let selectedFood = 'either';
+let tempCount = 30, countTracking = true;
+
+// ---------- Dates ----------
+function todayStr(d) {
+  d = d || new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function niceDate(ds) {
+  const [y,m,dd] = ds.split('-').map(Number);
+  return new Date(y, m-1, dd).toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
+}
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
+function fmtTime(t) {
+  let [h, m] = t.split(':').map(Number);
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return h + ':' + String(m).padStart(2,'0') + ' ' + ap;
+}
+function isAM(t) { return parseInt(t.split(':')[0], 10) < 12; }
+
+// ---------- Navigation ----------
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  const navMap = {today:'navToday', meds:'navMeds', appts:'navAppts', more:'navMore', history:null};
+  if (navMap[name]) document.getElementById(navMap[name]).classList.add('active');
+  if (name === 'today') renderToday();
+  if (name === 'meds') renderMeds();
+  if (name === 'appts') renderAppts();
+  window.scrollTo(0,0);
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ---------- Today view ----------
+function todaysDoses() {
+  const out = [];
+  DB.meds.forEach(med => {
+    med.times.forEach(t => {
+      const key = todayStr() + '|' + med.id + '|' + t;
+      const taken = DB.log.some(l => l.key === key);
+      out.push({ med, time: t, taken, key, am: isAM(t) });
+    });
+  });
+  out.sort((a,b) => a.time.localeCompare(b.time));
+  return out;
+}
+function foodTag(food) {
+  if (food === 'with') return '<span class="food-tag food-with">🍽️ With food</span>';
+  if (food === 'empty') return '<span class="food-tag food-empty">🚫 Empty stomach</span>';
+  return '';
+}
+function renderToday() {
+  const el = document.getElementById('todayList');
+  const doses = todaysDoses();
+  if (!doses.length) {
+    el.innerHTML = '<div class="empty">No pills added yet.<br><br>Tap <b>My Pills</b> below, then the <b>+</b> button<br>to add your first one.</div>';
+    return;
+  }
+  const done = doses.filter(d => d.taken).length;
+  let html = '<div class="card" style="text-align:center;font-size:22px;font-weight:700">' +
+    (done === doses.length ? '🎉 All done for today!' : done + ' of ' + doses.length + ' taken') + '</div>';
+
+  const amDoses = doses.filter(d => d.am);
+  const pmDoses = doses.filter(d => !d.am);
+
+  if (amDoses.length) {
+    html += '<div class="section-head am">☀️ Morning</div>';
+    amDoses.forEach(d => { html += doseRow(d); });
+  }
+  if (pmDoses.length) {
+    html += '<div class="section-head pm">🌙 Evening</div>';
+    pmDoses.forEach(d => { html += doseRow(d); });
+  }
+  el.innerHTML = html;
+}
+function doseRow(d) {
+  const photo = d.med.photo
+    ? '<img class="pill-photo" src="' + d.med.photo + '" onclick="event.stopPropagation();viewPhoto(\'' + d.med.id + '\',\'pill\')">'
+    : '<div class="pill-photo placeholder">💊</div>';
+  let countHtml = '';
+  if (d.med.count != null) {
+    const low = d.med.count <= 7;
+    countHtml = '<div class="count-badge' + (low ? ' low' : '') + '">' +
+      (low ? '⚠️ ' : '') + d.med.count + ' left' + (low ? ' — refill soon!' : '') + '</div>';
+  }
+  const snoozed = isSnoozed(d.key);
+  const snoozeHtml = snoozed
+    ? '<div style="font-size:17px;color:#1a56db;font-weight:700;margin-top:6px">⏰ Reminding you later</div>'
+    : (!d.taken ? '<div style="margin-top:8px;display:flex;gap:8px">' +
+        '<button onclick="event.stopPropagation();snoozeDose(\'' + d.key + '\',30)" style="flex:1;padding:12px;font-size:17px;font-weight:700;border:2px solid #1a56db;background:white;color:#1a56db;border-radius:12px;cursor:pointer">⏰ 30 min</button>' +
+        '<button onclick="event.stopPropagation();snoozeDose(\'' + d.key + '\',60)" style="flex:1;padding:12px;font-size:17px;font-weight:700;border:2px solid #1a56db;background:white;color:#1a56db;border-radius:12px;cursor:pointer">⏰ 1 hour</button>' +
+        '</div>' : '');
+  return '<div class="dose-row ' + (d.am ? 'am' : 'pm') + (d.taken ? ' taken' : '') + '" style="' + (snoozed ? 'opacity:0.45' : '') + '">' +
+    '<button class="check" onclick="toggleDose(\'' + d.key + '\')">' + (d.taken ? '✓' : '') + '</button>' +
+    photo +
+    '<div class="dose-info"><div class="name">' + esc(d.med.name) + '</div>' +
+    '<div class="detail"><span class="time-badge ' + (d.am ? 'am' : 'pm') + '">' + (d.am ? '☀️ ' : '🌙 ') + fmtTime(d.time) + '</span> ' + esc(d.med.dose) +
+    (d.med.notes ? '<br>' + esc(d.med.notes) : '') + '</div>' +
+    foodTag(d.med.food) + countHtml + snoozeHtml + '</div></div>';
+}
+function toggleDose(key) {
+  const i = DB.log.findIndex(l => l.key === key);
+  if (i >= 0) {
+    // un-check: give the pill back
+    const entry = DB.log[i];
+    DB.log.splice(i, 1);
+    const med = DB.meds.find(m => m.id === entry.medId);
+    if (med && med.count != null) med.count++;
+  } else {
+    const [date, medId, time] = key.split('|');
+    const med = DB.meds.find(m => m.id === medId);
+    // Double-dose guard: check if this med was already taken in the last 2 hours
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    const recent = DB.log.find(l => l.medId === medId && l.at > twoHoursAgo);
+    if (recent) {
+      if (!confirm('⚠️ You already took ' + (med ? med.name : 'this') + ' recently (' +
+        new Date(recent.at).toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'}) +
+        '). Take it again?')) return;
+    }
+    DB.log.push({ key, date, medId, time, medName: med ? med.name : '?', dose: med ? med.dose : '', food: med ? med.food : 'either', at: new Date().toISOString() });
+    if (med && med.count != null && med.count > 0) med.count--;
+    // Clear any snooze for this dose
+    DB.snoozed = (DB.snoozed || []).filter(s => s.key !== key);
+  }
+  save(DB); renderToday();
+}
+function snoozeDose(key, mins) {
+  DB.snoozed = DB.snoozed || [];
+  // Remove existing snooze for this key
+  DB.snoozed = DB.snoozed.filter(s => s.key !== key);
+  DB.snoozed.push({ key, until: Date.now() + mins * 60 * 1000 });
+  save(DB); renderToday();
+}
+function isSnoozed(key) {
+  if (!DB.snoozed) return false;
+  const s = DB.snoozed.find(x => x.key === key);
+  if (!s) return false;
+  if (Date.now() > s.until) {
+    DB.snoozed = DB.snoozed.filter(x => x.key !== key);
+    save(DB);
+    return false;
+  }
+  return true;
+}
+
+// ---------- Photo viewer ----------
+function viewPhoto(medId, which) {
+  const m = DB.meds.find(x => x.id === medId);
+  if (!m) return;
+  const src = which === 'pill' ? m.photo : m.labelPhoto;
+  if (!src) return;
+  document.getElementById('viewerImg').src = src;
+  document.getElementById('viewerCap').textContent = (which === 'pill' ? '💊 ' : '🏷️ ') + m.name + (which === 'pill' ? ' — match your pill to this photo' : ' — bottle label');
+  openModal('photoViewer');
+}
+
+// ---------- Meds list ----------
+function renderMeds() {
+  const el = document.getElementById('medList');
+  if (!DB.meds.length) {
+    el.innerHTML = '<div class="empty">No pills yet.<br><br>Tap the <b>+</b> button to add one.</div>';
+    return;
+  }
+  let html = '';
+  DB.meds.forEach(m => {
+    const photo = m.photo ? '<img class="pill-photo" src="' + m.photo + '">' : '<div class="pill-photo placeholder">💊</div>';
+    let countHtml = m.count != null ? '<div class="count-badge' + (m.count <= 7 ? ' low' : '') + '">' + m.count + ' left</div>' : '';
+    html += '<div class="dose-row" onclick="openMedModal(\'' + m.id + '\')">' + photo +
+      '<div class="dose-info"><div class="name">' + esc(m.name) + '</div>' +
+      '<div class="detail">' + esc(m.dose) + '<br>' + m.times.map(fmtTime).join(', ') + '</div>' +
+      foodTag(m.food) + countHtml + '</div><div style="font-size:32px;color:#aaa">›</div></div>';
+  });
+  el.innerHTML = html;
+}
+
+// ---------- Add/Edit med ----------
+const TIMES = ['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00'];
+function renderTimeChips() {
+  document.getElementById('timeChips').innerHTML = TIMES.map(t =>
+    '<button class="chip' + (selectedTimes.includes(t) ? ' on' : '') + '" onclick="toggleTime(\'' + t + '\')">' +
+    (isAM(t) ? '☀️ ' : '🌙 ') + fmtTime(t) + '</button>').join('');
+}
+function toggleTime(t) {
+  const i = selectedTimes.indexOf(t);
+  if (i >= 0) selectedTimes.splice(i,1); else selectedTimes.push(t);
+  renderTimeChips();
+}
+function setFood(f) {
+  selectedFood = f;
+  document.querySelectorAll('#foodChips .chip').forEach(c => c.classList.remove('food-on'));
+  document.querySelector('#foodChips .chip[data-food="' + f + '"]').classList.add('food-on');
+}
+function stepCount(d) {
+  countTracking = true;
+  tempCount = Math.max(0, tempCount + d);
+  document.getElementById('countVal').textContent = tempCount;
+}
+function setCount(v) {
+  if (v === 0) { countTracking = false; document.getElementById('countVal').textContent = '—'; }
+}
+function openMedModal(id) {
+  editingMedId = id || null;
+  tempPillPhoto = null; tempLabelPhoto = null;
+  selectedTimes = []; selectedFood = 'either';
+  tempCount = 30; countTracking = true;
+  document.getElementById('countVal').textContent = '30';
+  const pp = document.getElementById('pillPhotoPreview'), lp = document.getElementById('labelPhotoPreview');
+  pp.style.display = 'none'; pp.src = ''; lp.style.display = 'none'; lp.src = '';
+  if (id) {
+    const m = DB.meds.find(x => x.id === id);
+    document.getElementById('medModalTitle').textContent = 'Edit Pill';
+    document.getElementById('medName').value = m.name;
+    document.getElementById('medDose').value = m.dose;
+    document.getElementById('medNotes').value = m.notes || '';
+    selectedTimes = (m.times || []).slice();
+    selectedFood = m.food || 'either';
+    if (m.photo) { tempPillPhoto = m.photo; pp.src = m.photo; pp.style.display = 'block'; }
+    if (m.labelPhoto) { tempLabelPhoto = m.labelPhoto; lp.src = m.labelPhoto; lp.style.display = 'block'; }
+    if (m.count != null) { tempCount = m.count; countTracking = true; document.getElementById('countVal').textContent = m.count; }
+    else { countTracking = false; document.getElementById('countVal').textContent = '—'; }
+    document.getElementById('deleteMedBtn').style.display = 'block';
+  } else {
+    document.getElementById('medModalTitle').textContent = 'Add a Pill';
+    document.getElementById('medName').value = '';
+    document.getElementById('medDose').value = '';
+    document.getElementById('medNotes').value = '';
+    document.getElementById('deleteMedBtn').style.display = 'none';
+  }
+  renderTimeChips(); setFood(selectedFood);
+  openModal('medModal');
+}
+function handlePhoto(e, which) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const img = new Image();
+    img.onload = function() {
+      const c = document.createElement('canvas');
+      const MAX = 600;
+      let w = img.width, h = img.height;
+      if (w > h) { if (w > MAX) { h *= MAX/w; w = MAX; } }
+      else { if (h > MAX) { w *= MAX/h; h = MAX; } }
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = c.toDataURL('image/jpeg', 0.75);
+      const prevId = which === 'pill' ? 'pillPhotoPreview' : 'labelPhotoPreview';
+      if (which === 'pill') tempPillPhoto = dataUrl; else tempLabelPhoto = dataUrl;
+      const p = document.getElementById(prevId);
+      p.src = dataUrl; p.style.display = 'block';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+function saveMed() {
+  const name = document.getElementById('medName').value.trim();
+  if (!name) { alert('Please enter the pill name.'); return; }
+  if (!selectedTimes.length) { alert('Please tap at least one time.'); return; }
+  selectedTimes.sort();
+  const data = {
+    name,
+    dose: document.getElementById('medDose').value.trim(),
+    notes: document.getElementById('medNotes').value.trim(),
+    times: selectedTimes.slice(),
+    food: selectedFood,
+    photo: tempPillPhoto,
+    labelPhoto: tempLabelPhoto,
+    count: countTracking ? tempCount : null
+  };
+  if (editingMedId) {
+    const m = DB.meds.find(m => m.id === editingMedId);
+    // If re-enabling count tracking, use the entered value
+    Object.assign(m, data);
+  } else {
+    data.id = 'm' + Date.now();
+    DB.meds.push(data);
+  }
+  save(DB); closeModal('medModal'); renderMeds();
+}
+function deleteMed() {
+  if (!editingMedId || !confirm('Delete this pill?')) return;
+  DB.meds = DB.meds.filter(m => m.id !== editingMedId);
+  DB.log = DB.log.filter(l => l.medId !== editingMedId);
+  save(DB); closeModal('medModal'); renderMeds();
+}
+
+// ---------- Appointments ----------
+function renderAppts() {
+  const el = document.getElementById('apptList');
+  const now = todayStr();
+  const upcoming = DB.appts.filter(a => a.date >= now).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  const past = DB.appts.filter(a => a.date < now).sort((a,b) => (b.date+b.time).localeCompare(a.date+a.time)).slice(0,10);
+  if (!upcoming.length && !past.length) {
+    el.innerHTML = '<div class="empty">No doctor visits yet.<br><br>Tap the <b>+</b> button to add one.</div>';
+    return;
+  }
+  let html = '';
+  if (upcoming.length) { html += '<div class="history-day">Upcoming</div>'; upcoming.forEach(a => { html += apptCard(a); }); }
+  if (past.length) { html += '<div class="history-day">Past visits</div>'; past.forEach(a => { html += apptCard(a); }); }
+  el.innerHTML = html;
+}
+function apptCard(a) {
+  return '<div class="card appt"><div class="when">' + niceDate(a.date) + (a.time ? ' — ' + fmtTime(a.time) : '') + '</div>' +
+    '<div style="font-size:22px;font-weight:700;margin-top:6px">' + esc(a.who) + '</div>' +
+    (a.notes ? '<div style="font-size:19px;color:#666;margin-top:4px">' + esc(a.notes) + '</div>' : '') +
+    '<button class="big-btn btn-red" style="margin-top:12px;font-size:20px;padding:16px" onclick="deleteAppt(\'' + a.id + '\')">Delete</button></div>';
+}
+function openApptModal() {
+  document.getElementById('apptDate').value = todayStr();
+  document.getElementById('apptTime').value = '';
+  document.getElementById('apptWho').value = '';
+  document.getElementById('apptNotes').value = '';
+  openModal('apptModal');
+}
+function saveAppt() {
+  const date = document.getElementById('apptDate').value;
+  const who = document.getElementById('apptWho').value.trim();
+  if (!date || !who) { alert('Please enter the date and doctor.'); return; }
+  DB.appts.push({ id: 'a' + Date.now(), date, time: document.getElementById('apptTime').value, who, notes: document.getElementById('apptNotes').value.trim() });
+  save(DB); closeModal('apptModal'); renderAppts();
+}
+function deleteAppt(id) {
+  if (!confirm('Delete this visit?')) return;
+  DB.appts = DB.appts.filter(a => a.id !== id);
+  save(DB); renderAppts();
+}
+
+// ---------- History ----------
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  if (!DB.log.length) { el.innerHTML = '<div class="empty">Nothing checked off yet.</div>'; return; }
+  const byDay = {};
+  DB.log.slice().sort((a,b) => b.at.localeCompare(a.at)).forEach(l => { (byDay[l.date] = byDay[l.date] || []).push(l); });
+  let html = '';
+  Object.keys(byDay).sort().reverse().forEach(day => {
+    html += '<div class="history-day">' + niceDate(day) + '</div>';
+    byDay[day].forEach(l => {
+      const at = new Date(l.at);
+      html += '<div class="history-item"><span>✓ ' + esc(l.medName) + ' <span style="color:#888">(' + esc(l.dose) + ')</span></span>' +
+        '<span class="t">' + at.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'}) + '</span></div>';
+    });
+  });
+  el.innerHTML = html;
+}
+
+// ---------- Backup ----------
+function exportData() {
+  const blob = new Blob([JSON.stringify(DB, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'my-medicines-backup-' + todayStr() + '.json';
+  a.click();
+  setTimeout(() => alert('Backup saved! Keep it somewhere safe.'), 300);
+}
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = function(ev) {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (!d.meds || !d.log || !d.appts) throw new Error('bad file');
+      if (!confirm('This will replace everything currently in the app. Continue?')) return;
+      DB = d; save(DB);
+      renderToday(); renderMeds(); renderAppts();
+      alert('Backup loaded!');
+    } catch(err) { alert('That file did not look like a backup.'); }
+  };
+  r.readAsText(file);
+  e.target.value = '';
+}
+
+// ---------- Helpers ----------
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- Init ----------
+renderToday();
+</script>
+</body>
+</html>
