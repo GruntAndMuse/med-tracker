@@ -104,6 +104,7 @@
 <!-- TODAY -->
 <div id="page-today" class="page active">
   <div id="todayList"></div>
+  <div id="prnSection"></div>
 </div>
 
 <!-- MEDS -->
@@ -120,6 +121,11 @@
 
 <!-- MORE -->
 <div id="page-more" class="page">
+  <div class="card">
+    <h2 style="margin-top:0">📋 For My Doctor</h2>
+    <p style="font-size:18px;color:#666">A clean summary of your meds and how you've been doing. Show it on your phone or print it.</p>
+    <button class="big-btn btn-blue" onclick="showPage('doctor')">📋 View Summary</button>
+  </div>
   <div class="card">
     <h2 style="margin-top:0">📖 Open Source</h2>
     <p style="font-size:18px;color:#666">This app is free and open source. Anyone can read the code to verify it does what it says.</p>
@@ -152,6 +158,13 @@
   </div>
 </div>
 
+<!-- DOCTOR SUMMARY -->
+<div id="page-doctor" class="page">
+  <button class="big-btn btn-gray" onclick="showPage('more')">← Back</button>
+  <div id="doctorSummary"></div>
+  <button class="big-btn btn-blue" onclick="window.print()">🖨️ Print</button>
+</div>
+
 <!-- HISTORY -->
 <div id="page-history" class="page">
   <button class="big-btn btn-gray" onclick="showPage('more')">← Back</button>
@@ -179,8 +192,11 @@
     <label>Dose <span class="hint">(e.g. 8mg, 1 tablet)</span></label>
     <input id="medDose" placeholder="e.g. 8mg" autocomplete="off">
 
-    <label>What times? <span class="hint">(tap all that apply)</span></label>
+    <label>What times? <span class="hint">(tap all that apply — or mark as "as needed" below)</span></label>
     <div class="chip-row" id="timeChips"></div>
+    <div class="chip-row">
+      <button class="chip" id="prnChip" onclick="togglePRN()">📋 As needed (no fixed time)</button>
+    </div>
 
     <label>With food or empty stomach?</label>
     <div class="chip-row" id="foodChips">
@@ -259,6 +275,13 @@ let tempPillPhoto = null, tempLabelPhoto = null;
 let selectedTimes = [];
 let selectedFood = 'either';
 let tempCount = 30, countTracking = true;
+let isPRN = false;
+function togglePRN() {
+  isPRN = !isPRN;
+  document.getElementById('prnChip').classList.toggle('on', isPRN);
+  document.getElementById('timeChips').style.opacity = isPRN ? '0.4' : '1';
+  document.getElementById('timeChips').style.pointerEvents = isPRN ? 'none' : 'auto';
+}
 
 // ---------- Dates ----------
 function todayStr(d) {
@@ -283,11 +306,12 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-  const navMap = {today:'navToday', meds:'navMeds', appts:'navAppts', more:'navMore', history:null};
+  const navMap = {today:'navToday', meds:'navMeds', appts:'navAppts', more:'navMore', history:null, doctor:null};
   if (navMap[name]) document.getElementById(navMap[name]).classList.add('active');
   if (name === 'today') renderToday();
   if (name === 'meds') renderMeds();
   if (name === 'appts') renderAppts();
+  if (name === 'doctor') renderDoctor();
   window.scrollTo(0,0);
 }
 function openModal(id) { document.getElementById(id).classList.add('open'); }
@@ -314,26 +338,78 @@ function foodTag(food) {
 function renderToday() {
   const el = document.getElementById('todayList');
   const doses = todaysDoses();
-  if (!doses.length) {
+  if (!doses.length && !DB.meds.some(m => m.prn)) {
     el.innerHTML = '<div class="empty">No pills added yet.<br><br>Tap <b>My Pills</b> below, then the <b>+</b> button<br>to add your first one.</div>';
+    document.getElementById('prnSection').innerHTML = '';
     return;
   }
   const done = doses.filter(d => d.taken).length;
-  let html = '<div class="card" style="text-align:center;font-size:22px;font-weight:700">' +
-    (done === doses.length ? '🎉 All done for today!' : done + ' of ' + doses.length + ' taken') + '</div>';
-
-  const amDoses = doses.filter(d => d.am);
-  const pmDoses = doses.filter(d => !d.am);
-
-  if (amDoses.length) {
-    html += '<div class="section-head am">☀️ Morning</div>';
-    amDoses.forEach(d => { html += doseRow(d); });
-  }
-  if (pmDoses.length) {
-    html += '<div class="section-head pm">🌙 Evening</div>';
-    pmDoses.forEach(d => { html += doseRow(d); });
+  let html = '';
+  if (doses.length) {
+    html += '<div class="card" style="text-align:center;font-size:22px;font-weight:700">' +
+      (done === doses.length ? '🎉 All done for today!' : done + ' of ' + doses.length + ' taken') + '</div>';
+    const amDoses = doses.filter(d => d.am);
+    const pmDoses = doses.filter(d => !d.am);
+    if (amDoses.length) {
+      html += '<div class="section-head am">☀️ Morning</div>';
+      amDoses.forEach(d => { html += doseRow(d); });
+    }
+    if (pmDoses.length) {
+      html += '<div class="section-head pm">🌙 Evening</div>';
+      pmDoses.forEach(d => { html += doseRow(d); });
+    }
   }
   el.innerHTML = html;
+  renderPRN();
+}
+// Days of supply remaining
+function daysRemaining(med) {
+  if (med.count == null || !med.times || !med.times.length) return null;
+  const perDay = med.times.length;
+  return Math.floor(med.count / perDay);
+}
+function renderPRN() {
+  const el = document.getElementById('prnSection');
+  const prns = DB.meds.filter(m => m.prn);
+  if (!prns.length) { el.innerHTML = ''; return; }
+  let html = '<div class="section-head">📋 As Needed</div>';
+  prns.forEach(m => {
+    const photo = m.photo
+      ? '<img class="pill-photo" src="' + m.photo + '" onclick="event.stopPropagation();viewPhoto(\'' + m.id + '\',\'pill\')">'
+      : '<div class="pill-photo placeholder">💊</div>';
+    // Count today's PRN takes
+    const todayTakes = DB.log.filter(l => l.medId === m.id && l.date === todayStr() && l.prn).length;
+    let countHtml = '';
+    if (m.count != null) {
+      const low = m.count <= 7;
+      countHtml = '<div class="count-badge' + (low ? ' low' : '') + '">' + (low ? '⚠️ ' : '') + m.count + ' left' + (low ? ' — refill soon!' : '') + '</div>';
+    }
+    html += '<div class="dose-row">' +
+      '<button class="check" style="border-radius:16px" onclick="takePRN(\'' + m.id + '\')">+</button>' +
+      photo +
+      '<div class="dose-info"><div class="name">' + esc(m.name) + '</div>' +
+      '<div class="detail">' + esc(m.dose) + ' — as needed' +
+      (todayTakes ? '<br><b>Taken ' + todayTakes + 'x today</b>' : '') +
+      (m.notes ? '<br>' + esc(m.notes) : '') + '</div>' +
+      foodTag(m.food) + countHtml + '</div></div>';
+  });
+  el.innerHTML = html;
+}
+function takePRN(medId) {
+  const med = DB.meds.find(m => m.id === medId);
+  if (!med) return;
+  // Double-dose guard for PRN: warn if taken in last 2 hours
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+  const recent = DB.log.find(l => l.medId === medId && l.at > twoHoursAgo);
+  if (recent) {
+    if (!confirm('⚠️ You already took ' + med.name + ' at ' +
+      new Date(recent.at).toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'}) +
+      '. Take another?')) return;
+  }
+  const reason = prompt('Why are you taking ' + med.name + '? (optional)', '');
+  DB.log.push({ key: 'prn|' + todayStr() + '|' + medId + '|' + Date.now(), date: todayStr(), medId, time: '', medName: med.name, dose: med.dose, food: med.food, prn: true, reason: reason || '', at: new Date().toISOString() });
+  if (med.count != null && med.count > 0) med.count--;
+  save(DB); renderToday();
 }
 function doseRow(d) {
   const photo = d.med.photo
@@ -342,8 +418,11 @@ function doseRow(d) {
   let countHtml = '';
   if (d.med.count != null) {
     const low = d.med.count <= 7;
+    const days = daysRemaining(d.med);
     countHtml = '<div class="count-badge' + (low ? ' low' : '') + '">' +
-      (low ? '⚠️ ' : '') + d.med.count + ' left' + (low ? ' — refill soon!' : '') + '</div>';
+      (low ? '⚠️ ' : '') + d.med.count + ' left' +
+      (days != null ? ' (~' + days + ' day' + (days === 1 ? '' : 's') + ')' : '') +
+      (low ? ' — refill soon!' : '') + '</div>';
   }
   const snoozed = isSnoozed(d.key);
   const snoozeHtml = snoozed
@@ -427,9 +506,11 @@ function renderMeds() {
   DB.meds.forEach(m => {
     const photo = m.photo ? '<img class="pill-photo" src="' + m.photo + '">' : '<div class="pill-photo placeholder">💊</div>';
     let countHtml = m.count != null ? '<div class="count-badge' + (m.count <= 7 ? ' low' : '') + '">' + m.count + ' left</div>' : '';
+    const schedHtml = m.prn ? '<span class="time-badge" style="background:#ede9fe;color:#5b21b6">📋 As needed</span>'
+      : m.times.map(fmtTime).join(', ');
     html += '<div class="dose-row" onclick="openMedModal(\'' + m.id + '\')">' + photo +
       '<div class="dose-info"><div class="name">' + esc(m.name) + '</div>' +
-      '<div class="detail">' + esc(m.dose) + '<br>' + m.times.map(fmtTime).join(', ') + '</div>' +
+      '<div class="detail">' + esc(m.dose) + '<br>' + schedHtml + '</div>' +
       foodTag(m.food) + countHtml + '</div><div style="font-size:32px;color:#aaa">›</div></div>';
   });
   el.innerHTML = html;
@@ -464,8 +545,11 @@ function openMedModal(id) {
   editingMedId = id || null;
   tempPillPhoto = null; tempLabelPhoto = null;
   selectedTimes = []; selectedFood = 'either';
-  tempCount = 30; countTracking = true;
+  tempCount = 30; countTracking = true; isPRN = false;
   document.getElementById('countVal').textContent = '30';
+  document.getElementById('prnChip').classList.remove('on');
+  document.getElementById('timeChips').style.opacity = '1';
+  document.getElementById('timeChips').style.pointerEvents = 'auto';
   const pp = document.getElementById('pillPhotoPreview'), lp = document.getElementById('labelPhotoPreview');
   pp.style.display = 'none'; pp.src = ''; lp.style.display = 'none'; lp.src = '';
   if (id) {
@@ -476,6 +560,10 @@ function openMedModal(id) {
     document.getElementById('medNotes').value = m.notes || '';
     selectedTimes = (m.times || []).slice();
     selectedFood = m.food || 'either';
+    isPRN = !!m.prn;
+    document.getElementById('prnChip').classList.toggle('on', isPRN);
+    document.getElementById('timeChips').style.opacity = isPRN ? '0.4' : '1';
+    document.getElementById('timeChips').style.pointerEvents = isPRN ? 'none' : 'auto';
     if (m.photo) { tempPillPhoto = m.photo; pp.src = m.photo; pp.style.display = 'block'; }
     if (m.labelPhoto) { tempLabelPhoto = m.labelPhoto; lp.src = m.labelPhoto; lp.style.display = 'block'; }
     if (m.count != null) { tempCount = m.count; countTracking = true; document.getElementById('countVal').textContent = m.count; }
@@ -519,13 +607,14 @@ function handlePhoto(e, which) {
 function saveMed() {
   const name = document.getElementById('medName').value.trim();
   if (!name) { alert('Please enter the pill name.'); return; }
-  if (!selectedTimes.length) { alert('Please tap at least one time.'); return; }
+  if (!isPRN && !selectedTimes.length) { alert('Please tap at least one time, or mark as "as needed".'); return; }
   selectedTimes.sort();
   const data = {
     name,
     dose: document.getElementById('medDose').value.trim(),
     notes: document.getElementById('medNotes').value.trim(),
-    times: selectedTimes.slice(),
+    times: isPRN ? [] : selectedTimes.slice(),
+    prn: isPRN,
     food: selectedFood,
     photo: tempPillPhoto,
     labelPhoto: tempLabelPhoto,
@@ -587,6 +676,86 @@ function deleteAppt(id) {
   if (!confirm('Delete this visit?')) return;
   DB.appts = DB.appts.filter(a => a.id !== id);
   save(DB); renderAppts();
+}
+
+// ---------- Doctor summary ----------
+function renderDoctor() {
+  const el = document.getElementById('doctorSummary');
+  const today = new Date().toLocaleDateString(undefined, {month:'long', day:'numeric', year:'numeric'});
+  let html = '<div class="card"><h2 style="margin-top:0">📋 Medication Summary</h2>' +
+    '<p style="color:#666;font-size:18px">As of ' + today + '</p></div>';
+
+  if (!DB.meds.length) {
+    html += '<div class="empty">No medications added yet.</div>';
+  } else {
+    html += '<div class="card"><h3 style="margin-top:0">Current Medications</h3>';
+    DB.meds.forEach(m => {
+      const sched = m.prn ? 'As needed' : m.times.map(fmtTime).join(', ');
+      const foodTxt = m.food === 'with' ? ' — with food' : m.food === 'empty' ? ' — empty stomach' : '';
+      const days = daysRemaining(m);
+      html += '<div style="padding:12px 0;border-bottom:1px solid #eee">' +
+        '<div style="font-size:21px;font-weight:700">' + esc(m.name) + ' <span style="font-weight:400;color:#666">' + esc(m.dose) + '</span></div>' +
+        '<div style="font-size:18px;color:#555">' + sched + foodTxt + '</div>' +
+        (m.count != null ? '<div style="font-size:18px;color:' + (m.count <= 7 ? '#c81e1e;font-weight:700' : '#555') + '">' +
+          m.count + ' remaining' + (days != null ? ' (~' + days + ' days)' : '') + '</div>' : '') +
+        (m.notes ? '<div style="font-size:17px;color:#888">Note: ' + esc(m.notes) + '</div>' : '') +
+        '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Last 7 days adherence
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push(todayStr(d));
+  }
+  html += '<div class="card"><h3 style="margin-top:0">Last 7 Days</h3>';
+  days.forEach(day => {
+    const dayLogs = DB.log.filter(l => l.date === day && !l.prn);
+    // Count scheduled doses for that day (approximate: use current med schedule)
+    let scheduled = 0;
+    DB.meds.forEach(m => { if (!m.prn && m.times) scheduled += m.times.length; });
+    const taken = dayLogs.length;
+    const isToday = day === todayStr();
+    const bar = scheduled ? Math.round((taken / scheduled) * 100) : 100;
+    const barColor = bar >= 80 ? '#057a2e' : bar >= 50 ? '#f0b429' : '#c81e1e';
+    html += '<div style="display:flex;align-items:center;gap:10px;margin:8px 0">' +
+      '<div style="width:90px;font-size:17px;color:#666">' + new Date(day + 'T12:00').toLocaleDateString(undefined, {weekday:'short', month:'numeric', day:'numeric'}) + (isToday ? ' ●' : '') + '</div>' +
+      '<div style="flex:1;background:#eee;border-radius:8px;height:24px;overflow:hidden">' +
+      '<div style="width:' + Math.min(100, bar) + '%;background:' + barColor + ';height:100%"></div></div>' +
+      '<div style="width:70px;text-align:right;font-size:17px;font-weight:700">' + taken + '/' + scheduled + '</div></div>';
+  });
+  html += '<p style="font-size:16px;color:#888">Green = good, yellow = missed some, red = missed most. "As needed" meds not counted.</p></div>';
+
+  // PRN usage
+  const prnLogs = DB.log.filter(l => l.prn).slice(-10).reverse();
+  if (prnLogs.length) {
+    html += '<div class="card"><h3 style="margin-top:0">Recent "As Needed" Use</h3>';
+    prnLogs.forEach(l => {
+      const at = new Date(l.at);
+      html += '<div style="padding:8px 0;border-bottom:1px solid #eee;font-size:18px">' +
+        '<b>' + esc(l.medName) + '</b> — ' + niceDate(l.date) + ' ' +
+        at.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'}) +
+        (l.reason ? '<br><span style="color:#666">Reason: ' + esc(l.reason) + '</span>' : '') + '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Upcoming appointments
+  const upcoming = DB.appts.filter(a => a.date >= todayStr()).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time)).slice(0,5);
+  if (upcoming.length) {
+    html += '<div class="card"><h3 style="margin-top:0">Upcoming Appointments</h3>';
+    upcoming.forEach(a => {
+      html += '<div style="padding:8px 0;border-bottom:1px solid #eee;font-size:18px">' +
+        '<b>' + niceDate(a.date) + (a.time ? ' ' + fmtTime(a.time) : '') + '</b><br>' + esc(a.who) +
+        (a.notes ? '<br><span style="color:#666">' + esc(a.notes) + '</span>' : '') + '</div>';
+    });
+    html += '</div>';
+  }
+
+  html += '<div class="disclaimer">⚠️ This summary is for informational purposes only. It is not medical advice.</div>';
+  el.innerHTML = html;
 }
 
 // ---------- History ----------
