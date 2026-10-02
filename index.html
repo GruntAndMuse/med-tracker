@@ -148,6 +148,9 @@
   <div class="card">
     <h2 style="margin-top:0">🔐 App Lock</h2>
     <p style="font-size:18px;color:#666" id="lockStatus">Protect all your data with a password.</p>
+    <p style="font-size:17px;color:#666;background:#e6f4ea;border-radius:12px;padding:14px;line-height:1.5">
+      <b>🔐 No backdoors:</b> if you forget your password, your data cannot be recovered — by you, by us, by anyone. That's what makes it truly private.
+    </p>
     <button class="big-btn btn-blue" id="lockSetupBtn" onclick="setupLock()">🔐 Set Up App Lock</button>
     <button class="big-btn btn-gray" id="lockChangeBtn" style="display:none" onclick="changeLockPw()">Change Password</button>
     <button class="big-btn btn-red" id="lockRemoveBtn" style="display:none" onclick="removeLock()">Remove App Lock</button>
@@ -166,6 +169,15 @@
       <li><span class="icon">📱</span> Everything stays on this phone</li>
       <li><span class="icon">☁️</span> Nothing sent to the cloud or internet</li>
     </ul>
+    <div style="background:#e6f4ea;border-radius:12px;padding:16px;margin-top:12px">
+      <div style="font-size:19px;font-weight:700;color:#057a2e;margin-bottom:6px">🔐 No backdoors. Ever.</div>
+      <div style="font-size:17px;color:#333;line-height:1.5">
+        If you turn on App Lock, your data is encrypted with a password only you know.
+        <b>We cannot recover it if you forget it</b> — and that's the point.
+        No backdoor means nobody can get to your data: not us, not hackers, not anyone.
+        That's not a limitation. That's the guarantee.
+      </div>
+    </div>
   </div>
   <div class="card">
     <h2 style="margin-top:0">Backup</h2>
