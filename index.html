@@ -877,11 +877,12 @@ function logPastDose(key) {
 }
 
 // ---------- Encrypted backup (AES-GCM + PBKDF2, all on-device) ----------
-async function deriveKey(password, salt) {
+async function deriveKey(password, salt, iterations) {
+  iterations = iterations || 600000;
   const enc = new TextEncoder();
   const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: salt, iterations: iterations, hash: 'SHA-256' },
     baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
   );
 }
@@ -897,7 +898,8 @@ async function exportEncrypted() {
     const data = new TextEncoder().encode(JSON.stringify(DB));
     const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, data);
     const bundle = {
-      v: 1, alg: 'AES-GCM-256/PBKDF2-SHA256-100k',
+      v: 1, alg: 'AES-GCM-256/PBKDF2-SHA256-600k',
+      iter: 600000,
       salt: btoa(String.fromCharCode(...salt)),
       iv: btoa(String.fromCharCode(...iv)),
       data: btoa(String.fromCharCode(...new Uint8Array(ct)))
@@ -917,7 +919,7 @@ async function importEncrypted(bundle) {
     const salt = Uint8Array.from(atob(bundle.salt), c => c.charCodeAt(0));
     const iv = Uint8Array.from(atob(bundle.iv), c => c.charCodeAt(0));
     const ct = Uint8Array.from(atob(bundle.data), c => c.charCodeAt(0));
-    const key = await deriveKey(pw, salt);
+    const key = await deriveKey(pw, salt, bundle.iter || 100000);
     const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
     const d = JSON.parse(new TextDecoder().decode(pt));
     if (!d.meds || !d.log || !d.appts) throw new Error('bad data');
@@ -1006,7 +1008,7 @@ async function unlockApp() {
   try {
     const stored = JSON.parse(localStorage.getItem(LOCK_KEY));
     const salt = Uint8Array.from(atob(stored.salt), c => c.charCodeAt(0));
-    const key = await deriveKey(pw, salt);
+    const key = await deriveKey(pw, salt, stored.iter || 100000);
     // Verify by decrypting the check value
     const iv = Uint8Array.from(atob(stored.checkIv), c => c.charCodeAt(0));
     const ct = Uint8Array.from(atob(stored.check), c => c.charCodeAt(0));
@@ -1044,6 +1046,7 @@ async function setupLock() {
       new TextEncoder().encode(JSON.stringify(DB)));
     localStorage.setItem(LOCK_KEY, JSON.stringify({
       salt: btoa(String.fromCharCode(...salt)),
+      iter: 600000,
       checkIv: btoa(String.fromCharCode(...checkIv)),
       check: btoa(String.fromCharCode(...new Uint8Array(checkCt)))
     }));
@@ -1065,7 +1068,7 @@ async function changeLockPw() {
   try {
     const stored = JSON.parse(localStorage.getItem(LOCK_KEY));
     const salt = Uint8Array.from(atob(stored.salt), c => c.charCodeAt(0));
-    const key = await deriveKey(pw, salt);
+    const key = await deriveKey(pw, salt, stored.iter || 100000);
     const iv = Uint8Array.from(atob(stored.checkIv), c => c.charCodeAt(0));
     const ct = Uint8Array.from(atob(stored.check), c => c.charCodeAt(0));
     const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
@@ -1086,6 +1089,7 @@ async function changeLockPw() {
     new TextEncoder().encode(JSON.stringify(DB)));
   localStorage.setItem(LOCK_KEY, JSON.stringify({
     salt: btoa(String.fromCharCode(...salt)),
+    iter: 600000,
     checkIv: btoa(String.fromCharCode(...checkIv)),
     check: btoa(String.fromCharCode(...new Uint8Array(checkCt)))
   }));
@@ -1102,7 +1106,7 @@ async function removeLock() {
   try {
     const stored = JSON.parse(localStorage.getItem(LOCK_KEY));
     const salt = Uint8Array.from(atob(stored.salt), c => c.charCodeAt(0));
-    const key = await deriveKey(pw, salt);
+    const key = await deriveKey(pw, salt, stored.iter || 100000);
     const iv = Uint8Array.from(atob(stored.checkIv), c => c.charCodeAt(0));
     const ct = Uint8Array.from(atob(stored.check), c => c.charCodeAt(0));
     await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
