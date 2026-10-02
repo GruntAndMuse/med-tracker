@@ -1138,6 +1138,16 @@ function updateLockUI() {
   const locked = await checkLockOnStart();
   if (!locked) {
     renderToday(); renderMeds(); renderAppts();
+    // First-launch: strongly recommend app lock (default-on stance)
+    const seen = localStorage.getItem('medTrackerLockPrompt');
+    if (!seen && !lockEnabled) {
+      localStorage.setItem('medTrackerLockPrompt', '1');
+      setTimeout(() => {
+        if (confirm('🔐 Protect your data?\n\nTurn on App Lock to encrypt everything with a password. No backdoors — if you forget it, nobody can recover it, not even us.\n\nRecommended: YES')) {
+          showLock('setup');
+        }
+      }, 800);
+    }
   }
   updateLockUI();
 })();
