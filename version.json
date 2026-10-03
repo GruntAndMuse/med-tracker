@@ -1,6 +1,6 @@
 {
-  "version": "1.0.10",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.10.apk",
-  "checksum": "sha256:5b848ef64870e976e96c5c305ca2d49ce510f2495e7ab1de158a6a4dc659a5d8",
-  "notes": "Face unlock now mentioned explicitly in biometric status."
+  "version": "1.0.11",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.11.apk",
+  "checksum": "sha256:b9bd82f817d6ce7b0b61b292703b96f5c5e9ab93bbd6455aa9b958f62a616bf5",
+  "notes": "Update check timeout fix."
 }
