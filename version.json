@@ -1,6 +1,6 @@
 {
-  "version": "1.0.7",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.7.apk",
-  "checksum": "sha256:d9529a52322d9ee0ce7bf458c6ea58d43447118f6fce1213bdb9fed6e0d50895",
-  "notes": "Update checker cache fix."
+  "version": "1.0.8",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.8.apk",
+  "checksum": "sha256:e2158d709d24430c7bc3bd66e3d5bf0ab6d2674f39a8e862b23ef0200fc578f9",
+  "notes": "Fingerprint unlock via Android Keystore."
 }
