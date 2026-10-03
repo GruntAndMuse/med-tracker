@@ -1,6 +1,6 @@
 {
-  "version": "1.0.25",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.25.apk",
-  "checksum": "sha256:713704b5f4000395b471db890eb38caa0714c87d182b71a8fe258ff8b1863bb0",
-  "notes": "Toast feedback on settings toggles (instant-save confirmation)."
+  "version": "1.0.26",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.26.apk",
+  "checksum": "sha256:e5f105f16d62ca7e8c5a402f3d0a5e1931eb4c78f29429c0452f6c465955baf3",
+  "notes": "Photo crop rewrite: grabbable corners, smooth dragging, pinch-to-zoom."
 }
