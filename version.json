@@ -1,6 +1,6 @@
 {
-  "version": "1.0.6",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.6.apk",
-  "checksum": "sha256:486a529f61cafc81a435ab0d69ee0478edff7b808313f590c9090d9c7031c8bb",
-  "notes": "Proper password setup/change UI \u2014 no more pop-up dialogs."
+  "version": "1.0.7",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.7.apk",
+  "checksum": "sha256:d9529a52322d9ee0ce7bf458c6ea58d43447118f6fce1213bdb9fed6e0d50895",
+  "notes": "Update checker cache fix."
 }
