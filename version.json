@@ -1,6 +1,6 @@
 {
-  "version": "1.0.16",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.16.apk",
-  "checksum": "sha256:5b5adbe5861b810c48f498ff4dcffdf127d53e49c50a330bbedb58540da265e6",
-  "notes": "Progressive lockout on wrong password attempts."
+  "version": "1.0.17",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.17.apk",
+  "checksum": "sha256:d1ccc75cc4a361e96ea6027565467a39f6f93766fd34519b4d381ce9a1634bf8",
+  "notes": "Doctor share, screenshot blocking, auto-lock, root warning."
 }
