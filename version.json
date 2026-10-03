@@ -1,6 +1,6 @@
 {
-  "version": "1.0.21",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.21.apk",
-  "checksum": "sha256:8bf774d2d60598f50fd7a522a607cce13362c515e9740906ece2ada6c7085c40",
-  "notes": "Typeable pill-count field (keeps -/+ stepper buttons)."
+  "version": "1.0.22",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.22.apk",
+  "checksum": "sha256:15405a282272485fc05068b3f3fc9ccbdf339bf10370f364f2413db361d3dc91",
+  "notes": "Manual photo crop, refill management (quick refill, refill history, low-stock banner, expiration dates)."
 }
