@@ -1,6 +1,6 @@
 {
-  "version": "1.0.8",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.8.apk",
-  "checksum": "sha256:e2158d709d24430c7bc3bd66e3d5bf0ab6d2674f39a8e862b23ef0200fc578f9",
-  "notes": "Fingerprint unlock via Android Keystore."
+  "version": "1.0.9",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.9.apk",
+  "checksum": "sha256:f6d42bc62149afae35460d30f25caf481d24e3b84ff8f20296f5335b9f155de9",
+  "notes": "App explains your phone's biometric capabilities in plain language."
 }
