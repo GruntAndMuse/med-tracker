@@ -1,6 +1,6 @@
 {
-  "version": "1.0.15",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.15.apk",
-  "checksum": "sha256:6f21c30ee9ffd7ad20028be56329d8d126d641c3696dc59f0846f6ad02242138",
-  "notes": "Password visibility toggle; same-password change rejected."
+  "version": "1.0.16",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.16.apk",
+  "checksum": "sha256:5b5adbe5861b810c48f498ff4dcffdf127d53e49c50a330bbedb58540da265e6",
+  "notes": "Progressive lockout on wrong password attempts."
 }
