@@ -1,6 +1,6 @@
 {
-  "version": "1.0.26",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.26.apk",
-  "checksum": "sha256:e5f105f16d62ca7e8c5a402f3d0a5e1931eb4c78f29429c0452f6c465955baf3",
-  "notes": "Photo crop rewrite: grabbable corners, smooth dragging, pinch-to-zoom."
+  "version": "1.0.28",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.28.apk",
+  "checksum": "sha256:e138d104313bcb79f8a98f96d4682d8328ddbe2971286bcaf26600bb91c02a8e",
+  "notes": "What's-new changelog, revert to previous version, per-med low-stock warning, per-bottle expiration with use-first, About GruntAndMuse, backup location fix, custom notification sound."
 }
