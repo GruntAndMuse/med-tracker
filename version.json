@@ -1,6 +1,6 @@
 {
-  "version": "1.0.23",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.23.apk",
-  "checksum": "sha256:1391719c729ec731b3997832616744cf6e76da298c26b1aa34fe392f9e71e45a",
-  "notes": "Biometric re-check on every lock screen (auto-disables fingerprint if phone biometrics changed)."
+  "version": "1.0.24",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.24.apk",
+  "checksum": "sha256:ed58ae26b847f5ac28a936b54d152d793f32d19db5ad98c456e6c276565cff87",
+  "notes": "Notification privacy: just Tracker / Tap to open. Zero mention of doses or meds."
 }
