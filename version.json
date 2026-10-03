@@ -1,6 +1,6 @@
 {
-  "version": "1.0.9",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.9.apk",
-  "checksum": "sha256:f6d42bc62149afae35460d30f25caf481d24e3b84ff8f20296f5335b9f155de9",
-  "notes": "App explains your phone's biometric capabilities in plain language."
+  "version": "1.0.10",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.10.apk",
+  "checksum": "sha256:5b848ef64870e976e96c5c305ca2d49ce510f2495e7ab1de158a6a4dc659a5d8",
+  "notes": "Face unlock now mentioned explicitly in biometric status."
 }
