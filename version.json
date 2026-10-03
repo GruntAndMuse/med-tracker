@@ -1,6 +1,6 @@
 {
-  "version": "1.0.12",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.12.apk",
-  "checksum": "sha256:b223e62bc12ad319ba68a96352a6e9a3f29d85b303eafbd022d01a1a138104bc",
-  "notes": "Security and UX fixes from second adversarial QC pass."
+  "version": "1.0.13",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.13.apk",
+  "checksum": "sha256:3ec26a05309ff18ca676088a1b9f2aba6fbbeb149ddce8b7ece54687450d91c5",
+  "notes": "Fingerprint enrollment prompt after password setup."
 }
