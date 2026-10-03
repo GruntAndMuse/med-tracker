@@ -1,6 +1,6 @@
 {
-  "version": "1.0.24",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.24.apk",
-  "checksum": "sha256:ed58ae26b847f5ac28a936b54d152d793f32d19db5ad98c456e6c276565cff87",
-  "notes": "Notification privacy: just Tracker / Tap to open. Zero mention of doses or meds."
+  "version": "1.0.25",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.25.apk",
+  "checksum": "sha256:713704b5f4000395b471db890eb38caa0714c87d182b71a8fe258ff8b1863bb0",
+  "notes": "Toast feedback on settings toggles (instant-save confirmation)."
 }
