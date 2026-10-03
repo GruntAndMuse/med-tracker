@@ -1,6 +1,6 @@
 {
-  "version": "1.0.13",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.13.apk",
-  "checksum": "sha256:3ec26a05309ff18ca676088a1b9f2aba6fbbeb149ddce8b7ece54687450d91c5",
-  "notes": "Fingerprint enrollment prompt after password setup."
+  "version": "1.0.14",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.14.apk",
+  "checksum": "sha256:0feec57ce610d30e55eeecf497c7306260f0e5cc11dbefa3a42e55e988f6dab3",
+  "notes": "Weak-password warning and auto biometric prompt."
 }
