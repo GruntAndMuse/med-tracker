@@ -1,6 +1,6 @@
 {
-  "version": "1.0.17",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.17.apk",
-  "checksum": "sha256:d1ccc75cc4a361e96ea6027565467a39f6f93766fd34519b4d381ce9a1634bf8",
-  "notes": "Doctor share, screenshot blocking, auto-lock, root warning."
+  "version": "1.0.19",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.19.apk",
+  "checksum": "sha256:e06904f6322bfd922cf953289562337bf0bc9cbc7bd17aeb1c32b2b44165da7c",
+  "notes": "Dose reminders with snooze, data-loss fixes (loud quota errors, slim snapshots with restore, atomic encrypted writes)."
 }
