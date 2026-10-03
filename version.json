@@ -1,6 +1,6 @@
 {
-  "version": "1.0.19",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.19.apk",
-  "checksum": "sha256:e06904f6322bfd922cf953289562337bf0bc9cbc7bd17aeb1c32b2b44165da7c",
-  "notes": "Dose reminders with snooze, data-loss fixes (loud quota errors, slim snapshots with restore, atomic encrypted writes)."
+  "version": "1.0.20",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.20.apk",
+  "checksum": "sha256:84eb0df856cfc4c26f63b74739fb2ea1c51dc623cd9a2dcef1d9bc018487e512",
+  "notes": "Exact dose-time picker (any time, scroll wheels) replacing hourly chips."
 }
