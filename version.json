@@ -1,6 +1,6 @@
 {
-  "version": "1.0.11",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.11.apk",
-  "checksum": "sha256:b9bd82f817d6ce7b0b61b292703b96f5c5e9ab93bbd6455aa9b958f62a616bf5",
-  "notes": "Update check timeout fix."
+  "version": "1.0.12",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.12.apk",
+  "checksum": "sha256:2c80f9ca75efd175decb42f0128e54742f1d582d81c6d21a84763146f70fbe2a",
+  "notes": "Security and UX fixes from second adversarial QC pass."
 }
