@@ -1,6 +1,6 @@
 {
-  "version": "1.0.14",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.14.apk",
-  "checksum": "sha256:0feec57ce610d30e55eeecf497c7306260f0e5cc11dbefa3a42e55e988f6dab3",
-  "notes": "Weak-password warning and auto biometric prompt."
+  "version": "1.0.15",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.15.apk",
+  "checksum": "sha256:6f21c30ee9ffd7ad20028be56329d8d126d641c3696dc59f0846f6ad02242138",
+  "notes": "Password visibility toggle; same-password change rejected."
 }
