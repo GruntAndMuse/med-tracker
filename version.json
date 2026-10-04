@@ -1,6 +1,6 @@
 {
   "version": "1.0.29",
   "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.29.apk",
-  "checksum": "sha256:31f1ca5544c5adab02abae3585033fb0663f53b460c7f7436ca656bebb10d485",
+  "checksum": "sha256:8165c6fa75655495138d4a135488cfb51c4ddf57fd72ac0b135b525d01734299",
   "notes": "SECURITY FIXES (5): relock-on-background now registers first + visibilitychange fallback; change-password uses the encrypted container (was rejecting correct passwords); live lockout countdown on the lock screen; lock screen scrolls (Cancel no longer clipped); doctor export maps food enum to human text. FEATURES: specific-day scheduling with per-day times (Mon/Wed/Fri AM + Sat night); supplement med type (lighter than Rx); prescriber (Rx) + store (supplement) tracking; 9 dosage forms with adaptive units; ingredient totals (arithmetic only, never judged); injection site rotation with longest-rested suggestion + skip-a-site; symptom logging with display-only pattern detection; side-effect tracker; doctor report as med-rec view with adherence % and new-symptoms-since-last-visit; caregiver mode (one app, profile switcher + dashboard, per-person data, no cloud); vacation mode (packing list + refill warnings); lock-screen Emergency view (per-field opt-in, explicit no-password warning); in-app feedback email; watch notification actions (Taken/Snooze)."
 }
