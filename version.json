@@ -1,6 +1,6 @@
 {
-  "version": "1.0.30",
-  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.30.apk",
-  "checksum": "sha256:b081071f2d4f8d9da67ea885067f06e2f881cbebf94ac8a1fb78371bf0c008bb",
-  "notes": "FIX BATCH from Dennis's 127/134 test pass. CRITICAL: removing App Lock no longer wipes medications (decrypts the stored container fresh, verifies shape, keeps a backup until the plaintext read-back verifies). Reset-password screen: emergency info removed (was crowding Cancel out of view). Returning from camera no longer forces password re-entry mid-add. Dose notifications now have Snooze + Taken action buttons and persist until acted on. Custom reminder sound persists; battery-optimization link always visible. Snooze returns to the snoozed dose. Missed doses glanceable in history, never shaming. Refill ADDS to pills-on-hand (was replacing); refill history visible. Form-specific med icons. PRN labeled 'as needed'. Long med names wrap. Skip-a-zone available during injection logging. Vacation date validation message fixed; injection packing uses whole doses. Doctor summary: Print works, dose counts fixed. Load Backup finds saved files; restore keyboard reliable. SECURITY.md now honestly discloses the update-check network call."
+  "version": "1.0.31",
+  "apkUrl": "https://github.com/GruntAndMuse/med-tracker/raw/main/releases/med-tracker-v1.0.31.apk",
+  "checksum": "sha256:61b1d3c47f8b6802e8b078e58a1f7579e931a62c8bb75f51c861382f692055b9",
+  "notes": "Hotfix: Today's dose list now shows each med's form icon (injection, liquid, drops, etc.), not the generic pill \u2014 matching the Medicines list. The v1.0.30 batch missed this one row renderer."
 }
