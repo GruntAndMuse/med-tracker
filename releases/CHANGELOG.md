@@ -3,6 +3,18 @@
 Plain-language changelog, newest first. The app fetches this file from
 GitHub when you tap "Check for Updates".
 
+## v1.0.31 - 2026-10-08
+- Today's dose list now shows each med's form icon (injection, liquid, drops, etc.), not the generic pill — matching the Medicines list
+
+## v1.0.30 - 2026-10-08
+- Fixed: removing the app lock can no longer wipe your medications
+- Dose notifications now have Snooze and Taken buttons, and stay until you act on them
+- Refills add to your pill count (they used to replace it), and refill history shows up
+- Load Backup now finds your saved backup files
+- "PRN" is labeled "as needed" wherever it appears
+- Each dosage form shows its own icon; long med names wrap instead of running off
+- Doctor summary: Print works, dose counts fixed
+
 ## v1.0.28 - 2026-10-03
 - What's new: see exactly what changed before you update
 - Go back to the previous version if a new one ever breaks something (your data is backed up first, automatically)
